@@ -1,5 +1,5 @@
-# 微服务
 ## 技术背景
+
 ### 什么是微服务
 微服务的概念源于2014年3月Martin Fowler所写的一篇文章“Microservices”。
 
@@ -14,7 +14,7 @@
 4. 容错：当某一组件发生故障时，在单一进程的传统架构下，故障很有可能在进程内扩散，形成应用全局性的不可用。在微服务架构下，故障会被隔离在单个服务中。若设计良好，其他服务可通过重试、平稳退化等机制实现应用层面的容错。
 5. 扩展：单块架构应用也可以实现横向扩展，就是将整个应用完整的复制到不同的节点。当应用的不同组件在扩展需求上存在差异时，微服务架构便体现出其灵活性，因为每个服务可以根据实际需求独立进行扩展。
 
-## 为什么考虑Spring Cloud
+## 一、为什么考虑Spring Cloud
 - Spring Cloud来源于Spring，质量、稳定性、持续性都可以得到保证
 - Spring Cloud天然支持Spring Boot，更加便于业务落地。
 - Spring Cloud发展非常的快，从16年开始接触的时候相关组件版本为1.x，到现在将要发布2.x系列
@@ -24,7 +24,7 @@
  
 > Spring Cloud　是微服务架构的最佳落地方案
 
-## Spring Cloud 架构
+## 二、Spring Cloud 架构
 我们从整体来看一下Spring Cloud主要的组件，以及它的访问流程
 
 ![1581578491(1).jpg](https://upload-images.jianshu.io/upload_images/11571828-6f52260f24715ad7.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -47,19 +47,92 @@
 
 以上就是一个完整的Spring Cloud生态图。
 
-## eureka
+
+
+## 三、组件技术选型
+
+### Eureka
+
+Eureka是Netflix开源的一款提供服务注册和发现的产品，它提供了完整的Service Registry和Service Discovery实现。也是Spring Cloud体系中最重要最核心的组件之一。
+
+用大白话讲，Eureka就是一个服务中心，将所有的可以提供的服务都注册到它这里来管理，其它各调用者需要的时候去注册中心获取，然后再进行调用，避免了服务之间的直接调用，方便后续的水平扩展、故障转移等。
+
+
+当然服务中心这么重要的组件一但挂掉将会影响全部服务，因此需要搭建Eureka集群来保持高可用性，生产中建议最少两台。随着系统的流量不断增加，需要根据情况来扩展某个服务，Eureka内部已经提供均衡负载的功能，只需要增加相应的服务端实例既可。那么在系统的运行期间某个实例挂了怎么办？Eureka内容有一个心跳检测机制，如果某个实例在规定的时间内没有进行通讯则会自动被剔除掉，避免了某个实例挂掉而影响服务。
+
+因此使用了Eureka就自动具有了注册中心、负载均衡、故障转移的功能。
+
+### Hystrix
+
+在微服务架构中通常会有多个服务层调用，基础服务的故障可能会导致级联故障，进而造成整个系统不可用的情况，这种现象被称为服务雪崩效应。服务雪崩效应是一种因“服务提供者”的不可用导致“服务消费者”的不可用,并将不可用逐渐放大的过程。
+
+
+Hystrix会在某个服务连续调用N次不响应的情况下，立即通知调用端调用失败，避免调用端持续等待而影响了整体服务。Hystrix间隔时间会再次检查此服务，如果服务恢复将继续提供服务。
+
+### Config
+
+随着微服务不断的增多，每个微服务都有自己对应的配置文件。在研发过程中有测试环境、UAT环境、生产环境，因此每个微服务又对应至少三个不同环境的配置文件。这么多的配置文件，如果需要修改某个公共服务的配置信息，如：缓存、数据库等，难免会产生混乱，这个时候就需要引入Spring Cloud另外一个组件：Spring Cloud Config。
+
+Spring Cloud Config是一个解决分布式系统的配置管理方案。它包含了Client和Server两个部分，Server提供配置文件的存储、以接口的形式将配置文件的内容提供出去，Client通过接口获取数据、并依据此数据初始化自己的应用。
+
+其实就是Server端将所有的配置文件服务化，需要配置文件的服务实例去Config Server获取对应的数据。将所有的配置文件统一整理，避免了配置文件碎片化。
+
+如果服务运行期间改变配置文件，服务是不会得到最新的配置信息，需要解决这个问题就需要引入Refresh。可以在服务的运行期间重新加载配置文件。
+
+当所有的配置文件都存储在配置中心的时候，配置中心就成为了一个非常重要的组件。如果配置中心出现问题将会导致灾难性的后果，因此在生产中建议对配置中心做集群，来支持配置中心高可用性。
+
+### Spring Cloud Bus
+
+上面的Refresh方案虽然可以解决单个微服务运行期间重载配置信息的问题，但是在真正的实践生产中，可能会有N多的服务需要更新配置，如果每次依靠手动Refresh将是一个巨大的工作量，这时候Spring Cloud提出了另外一个解决方案：Spring Cloud Bus
+
+Spring Cloud Bus通过轻量消息代理连接各个分布的节点。这会用在广播状态的变化（例如配置变化）或者其它的消息指令中。Spring Cloud Bus的一个核心思想是通过分布式的启动器对Spring Boot应用进行扩展，也可以用来建立一个或多个应用之间的通信频道。目前唯一实现的方式是用AMQP消息代理作为通道。
+
+Spring Cloud Bus是轻量级的通讯组件，也可以用在其它类似的场景中。有了Spring Cloud Bus之后，当我们改变配置文件提交到版本库中时，会自动的触发对应实例的Refresh。
+
+### 服务网关
+
+Spring 官方最终还是按捺不住推出了自己的网关组件：Spring Cloud Gateway ，相比之前我们使用的 Zuul（1.x） 它有哪些优势呢？Zuul（1.x） 基于 Servlet，使用阻塞 API，它不支持任何长连接，如 WebSockets，Spring Cloud Gateway 使用非阻塞 API，支持 WebSockets，支持限流等新特性。
+
+#### Spring Cloud Gateway
+
+Spring Cloud Gateway 是 Spring Cloud 的一个全新项目，该项目是基于 Spring 5.0，Spring Boot 2.0 和 Project Reactor 等技术开发的网关，它旨在为微服务架构提供一种简单有效的统一的 API 路由管理方式。Spring Cloud Gateway 作为 Spring Cloud 生态系统中的网关，目标是替代 Netflix Zuul，其不仅提供统一的路由方式，并且基于 Filter 链的方式提供了网关基本的功能，例如：安全，监控/指标，和限流。
+
+相关概念:
+- Route（路由）：这是网关的基本构建块。它由一个 ID，一个目标 URI，一组断言和一组过滤器定义。如果断言为真，则路由匹配。
+- Predicate（断言）：这是一个 Java 8 的 Predicate。输入类型是一个 ServerWebExchange。我们可以使用它来匹配来自 HTTP 请求的任何内容，例如 headers 或参数。
+- Filter（过滤器）：这是 `org.springframework.cloud.gateway.filter.GatewayFilter`  的实例，我们可以使用它修改请求和响应。
+
+### 链路跟踪
+
+随着服务的越来越多，对调用链的分析会越来越复杂，如服务之间的调用关系、某个请求对应的调用链、调用之间消费的时间等，对这些信息进行监控就成为一个问题。在实际的使用中我们需要监控服务和服务之间通讯的各项指标，这些数据将是我们改进系统架构的主要依据。因此分布式的链路跟踪就变的非常重要，Spring Cloud也给出了具体的解决方案：Spring Cloud Sleuth和Zipkin。
+
+
+Spring Cloud Sleuth为服务之间调用提供链路追踪。通过Sleuth可以很清楚的了解到一个服务请求经过了哪些服务，每个服务处理花费了多长时间。从而让我们可以很方便的理清各微服务间的调用关系。
+
+Zipkin是Twitter的一个开源项目，允许开发者收集 Twitter 各个服务上的监控数据，并提供查询接口。
+
+分布式链路跟踪需要Sleuth+Zipkin结合来实现。
+
+
+## 四、踩坑
+
+### eureka
 1. pom 文件中的 eureka版本应当选择 springcloud 官网的最新版本，具体版本应该看官网，而不是看教程。
 2. 使用 springcloud 的依赖版本管理
  
-## 服务提供与调用
+### 服务提供与调用
     1. 服务调用使用的 feign 调用，需要新增依赖 
            
  ```
  <dependency>          
      <groupId>org.springframework.cloud</groupId>          
-    <artifactId>spring-cloud-starter-openfeign</artifactId>                                     <version>2.0.0.RELEASE</version>        
+    <artifactId>spring-cloud-starter-openfeign</artifactId>                                     
+    <version>2.0.0.RELEASE</version>        
 </dependency>
 ```
 
-## 技术选型
-详见技术选型文档
+## 五、总结
+
+我们从整体上来看一下Spring Cloud各个组件如何来配套使用：
+
+![1581578326(1).jpg](https://upload-images.jianshu.io/upload_images/11571828-bc4c439d08f1ed03.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
