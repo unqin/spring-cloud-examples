@@ -69,6 +69,34 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>1.7.0</version>
+                <configuration>
+                    <from>
+                        <image>openjdk:alpine</image>
+                    </from>
+                    <to>
+                        <image>docker.io/amethystcity/hello-docker</image>
+                        <tags>
+                            <tag>v1</tag>
+                        </tags>
+                        <auth>
+                            <username>amethystcity</username>
+                            <password>gyq895613</password>
+                        </auth>
+                    </to>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
