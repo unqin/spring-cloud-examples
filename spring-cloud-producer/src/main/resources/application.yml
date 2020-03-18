@@ -3,6 +3,7 @@ server:
 spring:
     application:
         name: spring-cloud-producer
+
 eureka:
     client:
         service-url:
