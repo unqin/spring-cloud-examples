@@ -28,3 +28,6 @@ hs_err_pid*
 .idea/sonarlint/
 eureka-producer-consumer/.idea/sonarlint/issuestore/2/
 spring-cloud-hystrix/.idea/sonarlint/
+workspace
+.project
+.classpath
