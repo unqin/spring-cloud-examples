@@ -8,10 +8,10 @@
         <version>2.2.6.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>oauth2-client</groupId>
-    <artifactId>demo</artifactId>
+    <groupId>com.example</groupId>
+    <artifactId>oauth2-client</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
+    <name>oauth2-client</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
@@ -43,6 +43,11 @@
                     <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.0</version>
         </dependency>
     </dependencies>
 

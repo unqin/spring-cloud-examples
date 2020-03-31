@@ -1,4 +1,4 @@
-package oauth2client.demo;
+package com.example.oauth2client;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,10 +6,10 @@ import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth
 
 @SpringBootApplication
 @EnableOAuth2Sso
-public class DemoApplication {
+public class Oauth2ClientApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
+        SpringApplication.run(Oauth2ClientApplication.class, args);
     }
 
 }
